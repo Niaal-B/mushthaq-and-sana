@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
+import { Instagram } from 'lucide-react'
 
 import { Curtain } from './components/Curtain'
+import { MusicToggle, useBackgroundMusic } from './components/BackgroundMusic'
 
 export const args = {
   curtain: 'closed',
@@ -14,6 +16,7 @@ type Props = Partial<typeof args>
 
 const ROSES_TOP = '/images/roses-top.jpg'
 const ROSES_BOTTOM = '/images/roses-bottom.jpg'
+const INSTAGRAM_URL = 'https://www.instagram.com/niaal._/'
 const MAP_URL = 'https://maps.app.goo.gl/3vEgRAeFaBE8AWNc7?g_st=ic'
 
 /** Content starts rising while the curtains are still mid-part. */
@@ -25,6 +28,7 @@ export default function Invitation(props: Props) {
   const { curtain, groomName, brideName, showMapLink } = { ...args, ...props }
   const [curtainShown, setCurtainShown] = useState(curtain === 'closed')
   const [revealed, setRevealed] = useState(curtain !== 'closed')
+  const music = useBackgroundMusic()
 
   useEffect(() => {
     setCurtainShown(curtain === 'closed')
@@ -45,12 +49,19 @@ export default function Invitation(props: Props) {
   return (
     <RevealContext.Provider value={{ revealed, base: curtain === 'closed' ? AFTER_CURTAIN : 0 }}>
       {curtainShown && (
-        <Curtain onOpenStart={() => setRevealed(true)} onOpened={() => setCurtainShown(false)} />
+        <Curtain
+          onTap={music.play}
+          onOpenStart={() => setRevealed(true)}
+          onOpened={() => setCurtainShown(false)}
+        />
       )}
+
+      {music.host}
+      {!curtainShown && <MusicToggle playing={music.playing} onToggle={music.toggle} />}
 
       <main
         aria-hidden={curtainShown && !revealed}
-        className="flex w-full justify-center overflow-hidden bg-paper px-4 py-12 font-serif text-ink sm:px-8 sm:py-20"
+        className="flex w-full flex-col items-center overflow-hidden bg-paper px-4 py-12 font-serif text-ink sm:px-8 sm:py-20"
       >
         <div className="relative w-full max-w-[760px]">
           {/* Top-right rose cluster — sits over the arch and interrupts its line, as on the card */}
@@ -185,6 +196,20 @@ export default function Invitation(props: Props) {
             rounded="rounded-[45%]"
           />
         </div>
+
+        {/* Designer credit */}
+        <a
+          href={INSTAGRAM_URL}
+          target="_blank"
+          rel="noreferrer"
+          className="group mt-14 inline-flex items-center gap-1.5 font-serif text-[12px] italic text-graphite/70 transition-colors duration-150 ease-out hover:text-gold-ink sm:mt-20 sm:text-[13px]"
+        >
+          Invitation crafted by
+          <span className="inline-flex items-center gap-1 font-sans text-[11px] not-italic font-medium tracking-[0.06em] text-gold-ink/80 group-hover:text-gold-ink sm:text-[12px]">
+            <Instagram aria-hidden className="size-[13px]" strokeWidth={1.6} />
+            @niaal._
+          </span>
+        </a>
       </main>
     </RevealContext.Provider>
   )

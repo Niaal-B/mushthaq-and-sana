@@ -31,3 +31,51 @@ body {
     scroll-behavior: auto;
   }
 }
+
+/* Opening seal */
+@keyframes seal-glow {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.96);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+}
+
+@keyframes seal-shine {
+  0%,
+  55% {
+    transform: translateX(-130%) rotate(20deg);
+  }
+  85%,
+  100% {
+    transform: translateX(130%) rotate(20deg);
+  }
+}
+
+.seal-glow {
+  animation: seal-glow 3.6s ease-in-out infinite;
+}
+
+.seal-shine::before {
+  content: '';
+  position: absolute;
+  inset: -20% 30%;
+  background: linear-gradient(90deg, rgba(255, 236, 190, 0), rgba(255, 236, 190, 0.28), rgba(255, 236, 190, 0));
+  animation: seal-shine 5s ease-in-out infinite;
+}
+
+.seal:focus-visible .seal-glow {
+  outline: 1px solid var(--color-champagne);
+  outline-offset: -18%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .seal-glow,
+  .seal-shine::before {
+    animation: none;
+  }
+}

@@ -1,12 +1,18 @@
 import React, { useEffect, useRef, useState } from 'react'
 
 const FABRIC = '/images/curtain-fabric.jpg'
+const SEAL = '/images/monogram-seal.jpg'
+
+/** The seal lifts away first; the curtains start parting just after. */
+const SEAL_MS = 320
 
 /** Curtain travel. Long on purpose: the guest asked for a slow, cinematic part. */
 const OPEN_MS = 1300
 const EASE = 'cubic-bezier(0.65, 0, 0.35, 1)'
 
 type Props = {
+  /** Called synchronously inside the tap, so it can start audio. */
+  onTap?: () => void
   onOpenStart?: () => void
   onOpened?: () => void
 }
@@ -16,7 +22,7 @@ type Props = {
  * own edge — compressing, turning slightly away in perspective and sliding off —
  * the way a hung curtain bunches when drawn.
  */
-export function Curtain({ onOpenStart, onOpened }: Props) {
+export function Curtain({ onTap, onOpenStart, onOpened }: Props) {
   const [opening, setOpening] = useState(false)
   const buttonRef = useRef<HTMLButtonElement>(null)
 
@@ -24,16 +30,23 @@ export function Curtain({ onOpenStart, onOpened }: Props) {
     buttonRef.current?.focus({ preventScroll: true })
   }, [])
 
+  const [sealing, setSealing] = useState(false)
+
   const open = () => {
-    if (opening) return
+    if (opening || sealing) return
+    onTap?.()
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    onOpenStart?.()
     if (reduce) {
+      onOpenStart?.()
       onOpened?.()
       return
     }
-    setOpening(true)
-    window.setTimeout(() => onOpened?.(), OPEN_MS + 80)
+    setSealing(true)
+    window.setTimeout(() => {
+      onOpenStart?.()
+      setOpening(true)
+      window.setTimeout(() => onOpened?.(), OPEN_MS + 80)
+    }, SEAL_MS)
   }
 
   return (
@@ -50,15 +63,66 @@ export function Curtain({ onOpenStart, onOpened }: Props) {
           ref={buttonRef}
           type="button"
           onClick={open}
+          aria-label="Open invitation"
           style={{
-            opacity: opening ? 0 : 1,
-            transform: opening ? 'scale(0.96)' : 'scale(1)',
-            transition: 'opacity 200ms cubic-bezier(0.23,1,0.32,1), transform 200ms cubic-bezier(0.23,1,0.32,1), background-color 160ms ease-out, color 160ms ease-out',
+            opacity: sealing ? 0 : 1,
+            transform: sealing ? 'scale(1.08)' : 'scale(1)',
+            filter: sealing ? 'blur(2px)' : 'none',
+            transition: `opacity ${SEAL_MS + 120}ms ease-out, transform ${SEAL_MS + 120}ms cubic-bezier(0.23,1,0.32,1), filter ${SEAL_MS + 120}ms ease-out`,
           }}
-          className="pointer-events-auto relative border border-champagne bg-ivory/90 px-9 py-4 font-sans text-[12px] font-medium uppercase tracking-[0.34em] whitespace-nowrap text-gold-ink shadow-[0_10px_40px_-12px_rgba(90,70,40,0.35)] backdrop-blur-[2px] hover:bg-gold-ink hover:text-ivory focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-4 focus-visible:outline-champagne sm:px-11 sm:py-[18px] sm:text-[13px]"
+          className="seal group pointer-events-auto flex flex-col items-center rounded-full outline-none"
         >
-          <span className="pointer-events-none absolute inset-[3px] border border-champagne/45" />
-          Open Invitation
+          <span className="relative block size-[min(42vw,170px)] sm:size-[190px]">
+            {/* Warm glow behind the seal */}
+            <span
+              aria-hidden
+              className="seal-glow absolute -inset-[12%] rounded-full"
+              style={{
+                background:
+                  'radial-gradient(circle, rgba(212,170,95,0.55) 0%, rgba(212,170,95,0.18) 45%, rgba(212,170,95,0) 70%)',
+              }}
+            />
+
+            {/* Fine outer ring */}
+            <span
+              aria-hidden
+              className="absolute -inset-[9%] rounded-full border border-champagne/50"
+            />
+
+            {/* Gold rim */}
+            <span
+              aria-hidden
+              className="absolute inset-0 rounded-full p-[3px] shadow-[0_18px_50px_-14px_rgba(60,30,5,0.65),0_4px_14px_-6px_rgba(60,30,5,0.5)] transition-transform duration-300 ease-out group-hover:scale-[1.03] group-active:scale-[0.98]"
+              style={{
+                background:
+                  'conic-gradient(from 210deg, #f3dca4, #a9824a, #f7e6b8, #8a6a3a, #e9cf91, #a9824a, #f3dca4)',
+              }}
+            >
+              <span className="relative block size-full overflow-hidden rounded-full ring-1 ring-[#2a1204]">
+                <img
+                  src={SEAL}
+                  alt=""
+                  className="absolute inset-0 size-full scale-[1.06] object-cover"
+                  draggable={false}
+                />
+                {/* Inner vignette so the edge reads as a pressed seal */}
+                <span
+                  className="absolute inset-0 rounded-full"
+                  style={{
+                    boxShadow: 'inset 0 0 28px 6px rgba(20,8,1,0.75), inset 0 0 0 1px rgba(243,220,164,0.25)',
+                  }}
+                />
+                {/* Light sweeping across the gold */}
+                <span className="seal-shine absolute inset-0" />
+              </span>
+            </span>
+          </span>
+
+          <span className="mt-[min(12vw,48px)] flex items-center gap-3 font-sans text-[10.5px] font-medium uppercase tracking-[0.38em] text-gold-ink sm:text-[11.5px]">
+            <span aria-hidden className="h-px w-7 bg-gradient-to-r from-transparent to-champagne" />
+            Tap the seal to open
+            <span aria-hidden className="h-px w-7 bg-gradient-to-l from-transparent to-champagne" />
+          </span>
         </button>
       </div>
     </div>
